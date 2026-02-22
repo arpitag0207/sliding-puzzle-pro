@@ -1,14 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sliding Puzzle Pro</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#111827">
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
@@ -17,18 +12,16 @@ body{
 margin:0;
 font-family:'Poppins',sans-serif;
 color:white;
-overflow-x:hidden;
-min-height:100vh;
 display:flex;
-align-items:center;
 justify-content:center;
+align-items:center;
+min-height:100vh;
 background:radial-gradient(circle at bottom,#1e3c72,#0f172a 70%);
+overflow-x:hidden;
 }
 
-#stars{
+canvas{
 position:fixed;
-width:100%;
-height:100%;
 top:0;
 left:0;
 z-index:-1;
@@ -38,25 +31,22 @@ z-index:-1;
 width:95%;
 max-width:520px;
 background:rgba(17,24,39,0.85);
-backdrop-filter:blur(20px);
 padding:25px;
 border-radius:20px;
-box-shadow:0 0 40px rgba(59,130,246,0.4);
 text-align:center;
+box-shadow:0 0 40px rgba(59,130,246,0.4);
 }
 
 h1{
 font-family:'Orbitron',sans-serif;
-font-size:clamp(24px,5vw,34px);
 margin-bottom:20px;
 }
 
 input{
 width:100%;
-padding:14px;
-border-radius:30px;
+padding:12px;
+border-radius:25px;
 border:none;
-outline:none;
 margin-bottom:15px;
 background:rgba(255,255,255,0.08);
 color:white;
@@ -64,15 +54,14 @@ text-align:center;
 }
 
 button{
-padding:10px 20px;
-margin:6px;
+padding:10px 18px;
+margin:5px;
 border:none;
 border-radius:25px;
-font-weight:600;
-cursor:pointer;
 background:linear-gradient(45deg,#3b82f6,#9333ea);
 color:white;
-transition:0.3s;
+cursor:pointer;
+font-weight:600;
 }
 
 button:hover{transform:scale(1.05)}
@@ -87,8 +76,8 @@ margin:15px 0;
 background:#3b82f6;
 padding:20px;
 border-radius:10px;
-font-weight:bold;
 cursor:pointer;
+font-weight:bold;
 }
 
 .empty{
@@ -99,13 +88,23 @@ cursor:default;
 .hidden{display:none}
 
 .info{margin-top:10px;font-size:14px}
+.message{margin-top:10px;color:#93c5fd}
 
-.message{margin-top:10px;font-size:14px;color:#93c5fd}
+.leaderboard{
+margin-top:15px;
+text-align:left;
+font-size:14px;
+}
 
+.leaderboard h3{
+text-align:center;
+margin-bottom:8px;
+}
 </style>
 </head>
 
 <body>
+
 <canvas id="stars"></canvas>
 
 <div class="container">
@@ -113,23 +112,23 @@ cursor:default;
 <h1>SLIDING PUZZLE PRO</h1>
 
 <div id="startScreen">
-<input type="text" id="playerName" placeholder="Enter Gamer Name">
+<input id="playerName" placeholder="Enter Gamer Name">
 <br>
 <button onclick="showDifficulty()">Start Game</button>
+<button onclick="showLeaderboard()">Leaderboard</button>
 </div>
 
 <div id="difficultyScreen" class="hidden">
 <p>Select Difficulty</p>
-<button onclick="startGame(3)">Easy (3x3)</button>
-<button onclick="startGame(4)">Medium (4x4)</button>
-<button onclick="startGame(5)">Hard (5x5)</button>
+<button onclick="startGame(3)">Easy</button>
+<button onclick="startGame(4)">Medium</button>
+<button onclick="startGame(5)">Hard</button>
 </div>
 
 <div id="gameScreen" class="hidden">
 <div class="info">
 Time: <span id="time">0</span>s |
-Moves: <span id="moves">0</span> |
-Best: <span id="best">--</span>
+Moves: <span id="moves">0</span>
 </div>
 
 <div id="grid" class="grid"></div>
@@ -141,6 +140,14 @@ Best: <span id="best">--</span>
 <div id="message" class="message"></div>
 </div>
 
+<div id="leaderboardScreen" class="hidden">
+<div class="leaderboard">
+<h3>🏆 Top 5 Players</h3>
+<div id="leaderboardList"></div>
+<button onclick="goHome()">Back</button>
+</div>
+</div>
+
 </div>
 
 <script>
@@ -148,10 +155,12 @@ const canvas=document.getElementById("stars");
 const ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
+
 let stars=[];
 for(let i=0;i<120;i++){
 stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.5});
 }
+
 function draw(){
 ctx.clearRect(0,0,canvas.width,canvas.height);
 ctx.fillStyle="white";
@@ -163,22 +172,17 @@ ctx.fill();
 requestAnimationFrame(draw);
 }
 draw();
-window.addEventListener("resize",()=>{
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-});
 
 let size=3;
 let tiles=[];
 let moves=0;
 let seconds=0;
 let timer=null;
+let player="";
 
 function showDifficulty(){
-if(!document.getElementById("playerName").value){
-alert("Enter your name");
-return;
-}
+player=document.getElementById("playerName").value;
+if(!player){alert("Enter name");return;}
 document.getElementById("startScreen").classList.add("hidden");
 document.getElementById("difficultyScreen").classList.remove("hidden");
 }
@@ -220,10 +224,7 @@ grid.appendChild(tile);
 
 function move(i){
 const empty=tiles.indexOf(0);
-const valid=[
-empty-1,empty+1,
-empty-size,empty+size
-];
+const valid=[empty-1,empty+1,empty-size,empty+size];
 if(valid.includes(i)){
 [tiles[i],tiles[empty]]=[tiles[empty],tiles[i]];
 moves++;
@@ -237,10 +238,8 @@ motivation();
 function shuffle(){
 for(let i=0;i<1000;i++){
 let empty=tiles.indexOf(0);
-let options=[
-empty-1,empty+1,
-empty-size,empty+size
-].filter(i=>i>=0 && i<tiles.length);
+let options=[empty-1,empty+1,empty-size,empty+size]
+.filter(i=>i>=0 && i<tiles.length);
 let rand=options[Math.floor(Math.random()*options.length)];
 [tiles[rand],tiles[empty]]=[tiles[empty],tiles[rand]];
 }
@@ -262,20 +261,35 @@ for(let i=0;i<tiles.length-1;i++){
 if(tiles[i]!==i+1) return;
 }
 clearInterval(timer);
-let best=localStorage.getItem("bestTime");
-if(!best || seconds<best){
-localStorage.setItem("bestTime",seconds);
-document.getElementById("best").innerText=seconds+"s";
+saveScore();
+alert("Victory 🎉");
+goHome();
 }
-alert("Victory! 🎉");
+
+function saveScore(){
+let scores=JSON.parse(localStorage.getItem("leaderboard"))||[];
+scores.push({name:player,time:seconds});
+scores.sort((a,b)=>a.time-b.time);
+scores=scores.slice(0,5);
+localStorage.setItem("leaderboard",JSON.stringify(scores));
+}
+
+function showLeaderboard(){
+document.getElementById("startScreen").classList.add("hidden");
+document.getElementById("leaderboardScreen").classList.remove("hidden");
+let scores=JSON.parse(localStorage.getItem("leaderboard"))||[];
+let html="";
+scores.forEach((s,i)=>{
+html+=`${i+1}. ${s.name} - ${s.time}s<br>`;
+});
+document.getElementById("leaderboardList").innerHTML=
+html||"No scores yet.";
 }
 
 function hint(){
 let empty=tiles.indexOf(0);
-let options=[
-empty-1,empty+1,
-empty-size,empty+size
-].filter(i=>i>=0 && i<tiles.length);
+let options=[empty-1,empty+1,empty-size,empty+size]
+.filter(i=>i>=0 && i<tiles.length);
 let rand=options[Math.floor(Math.random()*options.length)];
 move(rand);
 }
@@ -290,7 +304,13 @@ messages[Math.floor(Math.random()*messages.length)];
 
 function goBack(){
 clearInterval(timer);
+goHome();
+}
+
+function goHome(){
 document.getElementById("gameScreen").classList.add("hidden");
+document.getElementById("difficultyScreen").classList.add("hidden");
+document.getElementById("leaderboardScreen").classList.add("hidden");
 document.getElementById("startScreen").classList.remove("hidden");
 }
 </script>
