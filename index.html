@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sliding Puzzle Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="icon.jpg">
+
+<style>
+body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    color:white;
+    overflow:hidden;
+}
+
+/* Star Canvas */
+#stars{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:-1;
+    background:radial-gradient(circle at bottom,#1e3a8a,#0f172a 70%);
+}
+
+/* Main Card */
+.container{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(17,24,39,0.9);
+    padding:40px;
+    border-radius:25px;
+    width:650px;
+    text-align:center;
+    box-shadow:0 0 60px #2563eb55;
+}
+
+h1{
+    font-family:'Orbitron',sans-serif;
+    color:#60a5fa;
+    margin-bottom:20px;
+}
+
+input{
+    padding:12px;
+    border-radius:15px;
+    border:none;
+    width:60%;
+    text-align:center;
+    background:#1e293b;
+    color:white;
+    margin-bottom:15px;
+    box-shadow:0 0 15px #3b82f6;
+}
+
+button{
+    padding:10px 22px;
+    margin:6px;
+    border:none;
+    border-radius:20px;
+    font-weight:600;
+    cursor:pointer;
+    background:linear-gradient(135deg,#2563eb,#9333ea);
+    color:white;
+    transition:0.2s;
+}
+button:hover{
+    transform:scale(1.08);
+}
+
+.grid{
+    display:grid;
+    gap:12px;
+    margin:20px auto;
+}
+
+.tile{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(145deg,#f97316,#f59e0b);
+    border-radius:18px;
+    font-weight:700;
+    font-size:22px;
+    cursor:pointer;
+    box-shadow:0 0 15px #f97316aa;
+}
+.empty{
+    background:#1f2937;
+    box-shadow:none;
+}
+
+.screen{ display:none; }
+.show{ display:block; }
+
+.message{
+    height:20px;
+    margin-top:8px;
+    color:#facc15;
+    font-size:14px;
+}
+
+/* Modals */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+.modal-content{
+    background:#1e293b;
+    padding:30px;
+    border-radius:20px;
+    width:400px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="container">
+
+<h1>SLIDING PUZZLE PRO</h1>
+
+<div id="startScreen" class="show screen">
+    <input type="text" id="playerName" placeholder="Enter Gamer Name">
+    <br>
+    <button onclick="saveName()">Start Game</button>
+    <button onclick="showLeaderboard()">Leaderboard</button>
+</div>
+
+<div id="difficultyScreen" class="screen">
+    <h3>Select Difficulty</h3>
+    <button onclick="startGame(3)">Easy</button>
+    <button onclick="startGame(4)">Medium</button>
+    <button onclick="startGame(5)">Hard</button>
+</div>
+
+<div id="gameScreen" class="screen">
+    <div>
+        👤 <span id="displayName"></span> |
+        ⏱ <span id="timer">00:00</span> |
+        🎯 Moves: <span id="moves">0</span>
+    </div>
+
+    <div id="grid" class="grid"></div>
+
+    <div class="message" id="motivation"></div>
+
+    <button onclick="shuffle()">Shuffle</button>
+    <button onclick="smartHint()">Hint</button>
+    <button onclick="goBack()">Back</button>
+</div>
+
+</div>
+
+<!-- Victory Modal -->
+<div class="modal" id="winModal">
+    <div class="modal-content">
+        <h2>🏆 Victory!</h2>
+        <p id="finalStats"></p>
+        <button onclick="closeWin()">Play Again</button>
+    </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal" id="leaderboardModal">
+    <div class="modal-content">
+        <h2>🏆 Leaderboard</h2>
+        <div id="leaderboardContent"></div>
+        <button onclick="closeLeaderboard()">Close</button>
+    </div>
+</div>
+
+<script>
+
+/* ===== STARFIELD ===== */
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+let stars=[];
+function createStars(n){
+    stars=[];
+    for(let i=0;i<n;i++){
+        stars.push({
+            x:Math.random()*canvas.width,
+            y:Math.random()*canvas.height,
+            r:Math.random()*1.5,
+            a:Math.random(),
+            s:Math.random()*0.02
+        });
+    }
+}
+function drawStars(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    stars.forEach(star=>{
+        star.a+=star.s;
+        if(star.a>=1||star.a<=0) star.s=-star.s;
+        ctx.beginPath();
+        ctx.arc(star.x,star.y,star.r,0,Math.PI*2);
+        ctx.fillStyle="rgba(255,255,255,"+star.a+")";
+        ctx.fill();
+    });
+    requestAnimationFrame(drawStars);
+}
+createStars(150);
+drawStars();
+window.onresize=()=>{
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+    createStars(150);
+};
+
+/* ===== GAME LOGIC ===== */
+let size=3, tiles=[], seconds=0, timerInterval=null, moves=0;
+
+function show(screen){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+    document.getElementById(screen).classList.add('show');
+}
+
+function saveName(){
+    const name=document.getElementById("playerName").value.trim();
+    if(name===""){ alert("Enter name"); return; }
+    localStorage.setItem("playerName",name);
+    show("difficultyScreen");
+}
+
+function startGame(s){
+    size=s;
+    document.getElementById("displayName").textContent=
+        localStorage.getItem("playerName");
+    initTiles();
+    shuffle();
+    show("gameScreen");
+}
+
+function initTiles(){
+    tiles=[];
+    for(let i=1;i<size*size;i++) tiles.push(i);
+    tiles.push(0);
+}
+
+function createBoard(){
+    const grid=document.getElementById("grid");
+    grid.innerHTML="";
+    grid.style.gridTemplateColumns=`repeat(${size},80px)`;
+    tiles.forEach((v,i)=>{
+        const tile=document.createElement("div");
+        tile.classList.add("tile");
+        tile.style.width="80px";
+        tile.style.height="80px";
+        if(v===0) tile.classList.add("empty");
+        else{
+            tile.innerText=v;
+            tile.onclick=()=>moveTile(i);
+        }
+        grid.appendChild(tile);
+    });
+}
+
+function moveTile(i){
+    const empty=tiles.indexOf(0);
+    if(isAdjacent(i,empty)){
+        [tiles[i],tiles[empty]]=[tiles[empty],tiles[i]];
+        moves++;
+        document.getElementById("moves").textContent=moves;
+        showMotivation();
+        createBoard();
+        checkWin();
+    }
+}
+
+function isAdjacent(i,j){
+    const r1=Math.floor(i/size), c1=i%size;
+    const r2=Math.floor(j/size), c2=j%size;
+    return (Math.abs(r1-r2)+Math.abs(c1-c2))===1;
+}
+
+function shuffle(){
+    moves=0;
+    document.getElementById("moves").textContent=0;
+    do{
+        tiles.sort(()=>Math.random()-0.5);
+    }while(!isSolvable()||isSolved());
+    createBoard();
+    startTimer();
+}
+
+function isSolved(){
+    for(let i=0;i<tiles.length-1;i++)
+        if(tiles[i]!==i+1) return false;
+    return tiles[tiles.length-1]===0;
+}
+
+function isSolvable(){
+    let inv=0;
+    for(let i=0;i<tiles.length;i++)
+        for(let j=i+1;j<tiles.length;j++)
+            if(tiles[i]&&tiles[j]&&tiles[i]>tiles[j]) inv++;
+    if(size%2===1) return inv%2===0;
+    let row=size-Math.floor(tiles.indexOf(0)/size);
+    return (row%2===0)?inv%2===1:inv%2===0;
+}
+
+function smartHint(){
+    const empty=tiles.indexOf(0);
+    let best=null, bestScore=Infinity;
+    for(let i=0;i<tiles.length;i++){
+        if(isAdjacent(i,empty)){
+            let temp=[...tiles];
+            [temp[i],temp[empty]]=[temp[empty],temp[i]];
+            let score=manhattan(temp);
+            if(score<bestScore){
+                bestScore=score;
+                best=i;
+            }
+        }
+    }
+    if(best!==null) moveTile(best);
+}
+
+function manhattan(arr){
+    let d=0;
+    for(let i=0;i<arr.length;i++){
+        if(arr[i]===0) continue;
+        let cr=Math.floor((arr[i]-1)/size);
+        let cc=(arr[i]-1)%size;
+        let r=Math.floor(i/size);
+        let c=i%size;
+        d+=Math.abs(cr-r)+Math.abs(cc-c);
+    }
+    return d;
+}
+
+function showMotivation(){
+    const msg=document.getElementById("motivation");
+    if(moves<5) msg.textContent="Good going!";
+    else if(moves<15) msg.textContent="You can do it!";
+    else if(moves<30) msg.textContent="So close!";
+    else msg.textContent="Stay focused!";
+}
+
+function startTimer(){
+    seconds=0;
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval=setInterval(()=>{
+        seconds++;
+        document.getElementById("timer").textContent=formatTime(seconds);
+    },1000);
+}
+
+function formatTime(sec){
+    let m=Math.floor(sec/60);
+    let s=sec%60;
+    return String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');
+}
+
+function checkWin(){
+    if(isSolved()){
+        clearInterval(timerInterval);
+        saveScore();
+        document.getElementById("finalStats").innerText=
+            "Time: "+formatTime(seconds)+" | Moves: "+moves;
+        document.getElementById("winModal").style.display="flex";
+    }
+}
+
+function closeWin(){
+    document.getElementById("winModal").style.display="none";
+    shuffle();
+}
+
+/* Leaderboard */
+function saveScore(){
+    let name=localStorage.getItem("playerName");
+    let key="leaderboard_"+size;
+    let board=JSON.parse(localStorage.getItem(key))||[];
+    board.push({name,time:seconds});
+    board.sort((a,b)=>a.time-b.time);
+    board=board.slice(0,5);
+    localStorage.setItem(key,JSON.stringify(board));
+}
+
+function showLeaderboard(){
+    let content="";
+    [3,4,5].forEach(d=>{
+        let board=JSON.parse(localStorage.getItem("leaderboard_"+d))||[];
+        content+="<h4>"+d+"x"+d+"</h4>";
+        board.forEach((b,i)=>{
+            content+=(i+1)+". "+b.name+" - "+formatTime(b.time)+"<br>";
+        });
+    });
+    document.getElementById("leaderboardContent").innerHTML=
+        content||"No scores yet.";
+    document.getElementById("leaderboardModal").style.display="flex";
+}
+
+function closeLeaderboard(){
+    document.getElementById("leaderboardModal").style.display="none";
+}
+
+function goBack(){
+    clearInterval(timerInterval);
+    show("difficultyScreen");
+}
+</script>
+
+</body>
+</html>
