@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sliding Puzzle Pro</title>
 
+<meta name="theme-color" content="#0f172a">
+
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Sliding Puzzle Pro">
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -30,7 +38,7 @@ z-index:-1;
 .container{
 width:95%;
 max-width:520px;
-background:rgba(17,24,39,0.85);
+background:rgba(17,24,39,0.9);
 padding:25px;
 border-radius:20px;
 text-align:center;
@@ -74,7 +82,7 @@ margin:15px 0;
 
 .tile{
 background:#3b82f6;
-padding:20px;
+padding:18px;
 border-radius:10px;
 cursor:pointer;
 font-weight:bold;
@@ -94,11 +102,6 @@ cursor:default;
 margin-top:15px;
 text-align:left;
 font-size:14px;
-}
-
-.leaderboard h3{
-text-align:center;
-margin-bottom:8px;
 }
 </style>
 </head>
@@ -141,11 +144,9 @@ Moves: <span id="moves">0</span>
 </div>
 
 <div id="leaderboardScreen" class="hidden">
-<div class="leaderboard">
 <h3>🏆 Top 5 Players</h3>
 <div id="leaderboardList"></div>
 <button onclick="goHome()">Back</button>
-</div>
 </div>
 
 </div>
